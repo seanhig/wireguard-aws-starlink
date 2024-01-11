@@ -4,6 +4,8 @@ Quick guide to the key elements of setting up a Wireguard VPN server on AWS EC2 
 - Secure client connection to an AWS VPC Subnet
 - AWS VPC servers and services can communicate with services running on the client
 
+Although depicted as `StarLink CGNAT`, this will work behind any `CGNAT` or `NAT` gateway.  It is especially useful for enabling site-to-site while mobile and connected to LTE.
+
 > This was developed to allow services (such as AWS DMS) to connect to `docker-compose` stacks running on my laptop, behind Starlink, from my AWS VPC.  Effectively simulating AWS-to-on-premise site-to-site VPN.  
 
 ## Wireguard w/ Starlink CGNAT and AWS
