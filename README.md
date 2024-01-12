@@ -1,8 +1,8 @@
 # Wireguard on EC2 behind CGNAT (Starlink)
 Quick guide to the key elements of setting up a Wireguard VPN server on AWS EC2 using `Ubuntu 22.04`.  This configuration will allow the following:
 
-- Secure client connection to an AWS VPC Subnet
-- AWS VPC servers and services can communicate with services running on the client
+- Secure client connection to an AWS VPC
+- AWS VPC servers and services can communicate with services running on the client (laptop)
 
 Although depicted as `StarLink CGNAT`, this will work behind any `CGNAT` or `NAT` gateway.  It is especially useful for enabling site-to-site while mobile and connected to LTE.
 
@@ -118,3 +118,13 @@ Query the ports available on a remote or local address:
 ```
 sudo nmap -n -PN -sT -sU -p- localhost
 ```
+
+Test speed:
+```
+# server (laptop or EC2 instance)
+iperf -s
+
+# client (laptop or EC2 instance)
+iperf -c <server ip> 
+```
+
