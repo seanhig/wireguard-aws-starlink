@@ -19,7 +19,8 @@ Port `51820 UDP` must be open in the VPC and security groups to the wireguard se
 Also important to note that any ports accessed over the VPN (on the client machine) will need to be allowed in the `wireguard server security group`.
 
 ```
-sudo apt install wireguard
+sudo apt-get update
+sudo apt-get install wireguard resolvconf # resolvconf enables client internet access
 
 wg genkey | sudo tee /etc/wireguard/privatekey | wg pubkey | sudo tee /etc/wireguard/publickey
 
@@ -28,6 +29,8 @@ sudo cat /etc/wireguard/publickey
 
 sudo nano /etc/wireguard/wg0.conf
 ```
+
+> `resolvconf` is needed on the Wireguard server or client's will not have internet access.
 
 ```
 [Interface]
@@ -47,7 +50,8 @@ Endpoint = 98.97.123.123:50229
 
 The `iptables` commands are key to the tunneling behaviour.
 
-Ensure the interface is `eth0` or adjust above `iptables` commands accordingly.
+Ensure the interface is `eth0` or adjust above `iptables` commands accordingly.  If `eth0` does not map to the private EC2 ip client traffic will not leave the `wireguard server` (no internet).
+
 ```
 ip -c a
 ```
