@@ -1,0 +1,22 @@
+[
+  {
+    "ParameterKey": "KeyName",
+    "ParameterValue": "AWSKeypair2024"
+  },
+  {
+    "ParameterKey": "VPC",
+    "ParameterValue": "vpc-f74XXXXX"
+  },
+  {
+    "ParameterKey": "Subnet",
+    "ParameterValue": "subnet-f64XXXXX"
+  },
+  {
+    "ParameterKey": "InstanceType",
+    "ParameterValue": "t3.micro"
+  },
+  {
+    "ParameterKey": "WireguardServerName",
+    "ParameterValue": "wireguard-server"
+  }
+]

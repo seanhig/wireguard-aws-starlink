@@ -1,0 +1,124 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Wireguard VPN server and security group in existing VPC and subnet
+Parameters:
+  KeyName:
+    Description: Key Pair name
+    Type: 'AWS::EC2::KeyPair::KeyName'
+    Default: keyPair
+  VPC:
+    Description: Select a VPC for the Wireguard VPN Server
+    Type: 'AWS::EC2::VPC::Id'
+  Subnet:
+    Description: Select a subnet from the VPC
+    Type: 'AWS::EC2::Subnet::Id'
+  InstanceType:
+    Description: Select one of the instance types
+    Type: String
+    Default: t3.micro
+    AllowedValues:
+      - t3.micro
+      - t3.small
+      - t3.medium
+  WireguardServerName:
+    Description: The name of the Wireguard VPN Server
+    Type: String
+    Default: "wireguard-server"
+# EC2 AMIs are mapped for Amazon linux to the following regions. This will  pick the correct AMI for the region
+Mappings:
+  EC2RegionMap:
+    ca-central-1:
+      UbuntuLinuxLTS: ami-0a2e7efb4257c0907
+    ca-west-1:
+      UbuntuLinuxLTS: ami-0db2fabcbd0e76d52
+    us-east-1:
+      UbuntuLinuxLTS: ami-0c7217cdde317cfec
+    us-west-2:
+      UbuntuLinuxLTS: ami-008fe2fc65df48dac
+Resources:
+  # create security group to allow ssh
+  SecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: wireguard-vpn-sg
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - CidrIp: 0.0.0.0/0
+          FromPort: 22
+          IpProtocol: tcp
+          ToPort: 22
+        - CidrIp: 0.0.0.0/0
+          FromPort: 51820
+          IpProtocol: udp
+          ToPort: 51820
+        - CidrIp: 0.0.0.0/0  #Optional iPerf
+          FromPort: 5001
+          IpProtocol: tcp
+          ToPort: 5001
+
+  #Server 1
+  WireguardServer:
+    Type: 'AWS::EC2::Instance'
+    Properties:
+      ImageId: !FindInMap 
+        - EC2RegionMap
+        - !Ref 'AWS::Region'
+        - UbuntuLinuxLTS
+      InstanceType: !Ref InstanceType
+      KeyName: !Ref KeyName
+      SecurityGroupIds:
+        - !Ref SecurityGroup
+      SubnetId: !Ref Subnet
+      Tags:
+        -
+          Key: Name
+          Value: !Ref WireguardServerName
+
+      UserData:
+        Fn::Base64:
+          !Sub |
+            #!/bin/bash -xe
+            WG_CONFIG=/etc/wireguard/wg0.conf
+            WG_SRV_ADDRESS=192.168.10.1/24
+            WG_LISTEN_PORT=51820
+
+            sudo apt-get update
+            sudo apt-get -y install wireguard iperf inetutils-ping resolvconf 
+
+            wg genkey | sudo tee /etc/wireguard/privatekey | wg pubkey | sudo tee /etc/wireguard/publickey
+
+            PUBLICKEY=`sudo cat /etc/wireguard/publickey` 
+            PRIVATEKEY=`sudo cat /etc/wireguard/privatekey` 
+
+            NIC_NAME=`sudo ls /sys/class/net | grep e`
+
+            cat << EOF > ${!WG_CONFIG}
+            [Interface]
+            Address = ${!WG_SRV_ADDRESS}
+            MTU = 1300
+            SaveConfig = true
+            PostUp = iptables -A FORWARD -i %i -j ACCEPT; iptables -A FORWARD -o %i -j ACCEPT; iptables -t nat -A POSTROUTING -o ${!NIC_NAME} -j MASQUERADE
+            PostDown = iptables -D FORWARD -i %i -j ACCEPT; iptables -D FORWARD -o %i -j ACCEPT; iptables -t nat -D POSTROUTING -o ${!NIC_NAME} -j MASQUERADE
+            ListenPort = ${!WG_LISTEN_PORT}
+            PrivateKey = ${!PRIVATEKEY}
+            EOF
+
+            sudo sysctl -w net.ipv4.ip_forward=1
+            sudo sysctl -p
+
+            sudo systemctl enable wg-quick@wg0
+            sudo systemctl start wg-quick@wg0
+
+  EIP1:
+    Type: AWS::EC2::EIP
+    Properties:
+      InstanceId: !Ref WireguardServer
+Outputs:
+  PublicName:
+    Value: !GetAtt 
+      - WireguardServer
+      - PublicDnsName
+    Description: Public name (connect via SSH as user ubuntu)
+  PublicIP:
+    Value: !GetAtt
+      - WireguardServer
+      - PublicIp

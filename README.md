@@ -96,6 +96,8 @@ __Important__: Make sure to set DNS or you will likely not have internet access 
 
 > On the macOS client this can be created in a file and then imported.
 
+## Server Client Registration
+
 Then, back on the `wireguard server` the __Peer__ (client) must be registered:
 
 ```
@@ -105,6 +107,26 @@ sudo wg set wg0 peer XXXXXXXXccsn/LeNADyyXJeXCWoQAT1y1A= allowed-ips 192.168.10.
 Note that the above command uses the __PublicKey__ of the __client__.  
 
 > You should be able to connect and disconnect from the Wireguard VPN on your client (laptop) without interupting SSH sessions.  When connected you will be routing through AWS IGW, and will have a `checkip.amazonaws.com` of your `wireguard server EIP`.  You also won't be able to view reddit as AWS blocks that site outright.  Seems Starlink does less censoring... go Elon.
+
+## CloudFormation Template
+
+1. `cp wireguard-params-sample.json wireguard-params.json`
+
+2. Fill out the `wireguard-params.json` parameter file with the target KeyName, VPC ID, Subnet ID and desired server name.
+
+3. Run `bash create-stack.sh` (or use the AWS CLI command therein)
+
+4. Open your AWS console to `Cloud Formation` and observe the stack.  The `Outputs` section will provide a `Public IP`.  SSH into the PublicIP: `ssh ubuntu@<server public ip>`
+
+5. Run `sudo wg`, and it should output the wireguard interface `wg0` status and display the server public key (for client configuration)
+
+You can than configure clients and register them with the wireguard server.
+
+The default settings create a `192.168.10.0/24` tunnel network with the server at `192.168.10.1`.  Client addresses can be selected from this default network space.
+
+> Make sure to complete the __Server Client Registration__ above to register your new clients.
+
+Configuration is done with a quick `userdata` set of commands as seen in the template.  Additional configuration can be done there if required.
 
 ### Useful Troubleshooting Commands
 
@@ -132,3 +154,8 @@ iperf -s
 iperf -c <server ip> 
 ```
 
+#### Client/Peer Can't Connect to Internet through Wireguard Server
+
+- Ensure `resolveconf` package was installed on the server.
+- Ensure the network interface name (eg. eth0) aligns with your `wg0.conf` iptables.
+- Ensure the server can access the internet (igw)
