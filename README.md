@@ -110,6 +110,8 @@ Note that the above command uses the __PublicKey__ of the __client__.
 
 ## CloudFormation Template
 
+> Note: Ubuntu `22.04` AMI IDs are specified in the template for only a few primary regions.  Additional regions will need to be added, please consult the template.  Also note the required and optional ports in the security group.  NACLs and subnet routing tables will need to be manually adjusted accordingly.
+
 1. `cp wireguard-params-sample.json wireguard-params.json`
 
 2. Fill out the `wireguard-params.json` parameter file with the target KeyName, VPC ID, Subnet ID and desired server name.
