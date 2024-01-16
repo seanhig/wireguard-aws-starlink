@@ -161,3 +161,7 @@ iperf -c <server ip>
 - Ensure `resolveconf` package was installed on the server.
 - Ensure the network interface name (eg. eth0) aligns with your `wg0.conf` iptables.
 - Ensure the server can access the internet (igw)
+
+#### Wireguard Setup Issues
+
+- Check the `/var/log/cloud-init-output.log` to see if there were errors in the `userdata` script.
